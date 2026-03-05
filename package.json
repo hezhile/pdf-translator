@@ -1,0 +1,12 @@
+{
+  "name": "pdf-translator",
+  "version": "1.0.0",
+  "description": "PDF翻译工具 - 将PDF从英语或其他语言翻译成中文",
+  "main": "src/tools.py",
+  "scripts": {
+    "test": "python3 tests/test_parser.py && python3 tests/test_builder.py"
+  },
+  "keywords": ["pdf", "translation", "openclaw"],
+  "author": "OpenClaw",
+  "license": "MIT"
+}

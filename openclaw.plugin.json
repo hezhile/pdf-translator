@@ -1,0 +1,40 @@
+{
+  "name": "pdf-translator",
+  "version": "1.0.0",
+  "description": "PDF翻译工具 - 将PDF从英语或其他语言翻译成中文",
+  "type": "python",
+  "entry": "src/tools.py",
+  "tools": [
+    {
+      "name": "extract_pdf_text",
+      "description": "提取PDF文本内容，返回结构化数据",
+      "parameters": {
+        "path": "PDF文件路径",
+        "pages": "页码范围（all 或 0-4,7,9）"
+      }
+    },
+    {
+      "name": "build_translated_pdf_tool",
+      "description": "将翻译结果写回PDF，生成新文件",
+      "parameters": {
+        "original_path": "原始PDF路径",
+        "translations": "翻译数据字典",
+        "output_path": "输出路径（可选）",
+        "mode": "replace 或 bilingual"
+      }
+    },
+    {
+      "name": "translate_pdf",
+      "description": "一键翻译PDF文件（大文件推荐）",
+      "parameters": {
+        "input_path": "输入PDF路径",
+        "output_path": "输出路径（可选）",
+        "mode": "replace 或 bilingual",
+        "source_lang": "源语言（默认en）",
+        "target_lang": "目标语言（默认zh-CN）",
+        "glossary": "术语表（可选）",
+        "pages": "页码范围（all 或 0-9,15）"
+      }
+    }
+  ]
+}
