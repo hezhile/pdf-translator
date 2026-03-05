@@ -286,20 +286,19 @@ def build_translated_pdf(
 def _register_chinese_font(doc: fitz.Document) -> str:
     """
     注册中文字体，返回字体名称。
-
-    如果 NotoSansSC-Regular.ttf 存在，注册自定义字体。
-    否则使用 fitz 内建的 "china-s" 字体。
     """
     if os.path.exists(CHINESE_FONT_PATH):
         try:
-            # 注册自定义字体
             font_name = "NotoSansSC"
-            # PyMuPDF 会自动识别字体文件
+            # 读取字体并将其作为字节流嵌入当前文档
+            with open(CHINESE_FONT_PATH, "rb") as f:
+                font_buffer = f.read()
+            doc.insert_font(fontname=font_name, fontbuffer=font_buffer)
+            print(f"✅ 已注册自定义字体: {font_name} (从 {CHINESE_FONT_PATH})")
             return font_name
         except Exception as e:
-            print(f"⚠️  注册自定义字体失败: {e}，使用内建字体")
+            print(f"⚠️  注册自定义字体失败: {e}，回退使用内建字体")
 
-    # 使用 fitz 内建的 CJK 字体
     print(f"⚠️  中文字体文件不存在: {CHINESE_FONT_PATH}")
     print("   使用 PyMuPDF 内建的 china-s 字体")
     return "china-s"
@@ -314,39 +313,35 @@ def _fit_text_in_bbox(
     min_font_size: float = 6.0,
 ) -> float:
     """
-    找到能将文本放入 bbox 的最大字号。
-
-    从 max_font_size 开始，每次减 1，
-    直到文本能完全放入 bbox。
-    返回最终使用的字号。
+    找到能将文本放入 bbox 的最大字号。优化版：复用临时文档以提升性能。
     """
     bbox_width = bbox[2] - bbox[0]
     bbox_height = bbox[3] - bbox[1]
-    
+
     font_size = max_font_size
-    
-    while font_size >= min_font_size:
-        # 使用 insert_textbox 的返回值来判断是否放得下
-        # 返回正值表示成功，负值表示放不下
-        # 创建临时页面测试
-        test_doc = fitz.open()
-        test_page = test_doc.new_page(width=bbox_width + 100, height=bbox_height + 100)
-        test_bbox = (50, 50, 50 + bbox_width, 50 + bbox_height)
-        
-        rc = test_page.insert_textbox(
-            test_bbox,
-            text,
-            fontname=font_name,
-            fontsize=font_size,
-            color=(0, 0, 0),
-        )
+
+    # 优化：在循环外部创建一个临时文档，    test_doc = fitz.open()
+    test_page = test_doc.new_page(width=bbox_width + 100, height=bbox_height + 100)
+    test_bbox = (50, 50, 50 + bbox_width, 50 + bbox_height)
+
+    try:
+        while font_size >= min_font_size:
+            # 执行纯净测试
+            rc = test_page.insert_textbox(
+                test_bbox,
+                text,
+                fontname=font_name,
+                fontsize=font_size,
+                color=(0, 0, 0),
+            )
+
+            # rc > 0 表示成功放下了
+            if rc > 0:
+                return font_size
+
+            font_size -= 0.5  # 步长改为0.5，获取更精确的排版
+    finally:
+        # 无论如何确保关闭临时文档
         test_doc.close()
-        
-        # rc > 0 表示成功
-        if rc > 0:
-            return font_size
-        
-        # 缩小字号
-        font_size -= 1
-    
+
     return min_font_size
