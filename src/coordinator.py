@@ -31,7 +31,7 @@ QUEUE_DIR = os.path.expanduser("~/.openclaw/pdf_translate_queue")
 os.makedirs(QUEUE_DIR, exist_ok=True)
 
 
-def prepare_translation_tasks(
+async def prepare_translation_tasks(
     input_path: str,
     output_path: str | None = None,
     mode: str = "replace",
@@ -65,12 +65,11 @@ def prepare_translation_tasks(
     
     # 检查缓存
     print(f"[3/4] 检查缓存...")
-    import asyncio
-    asyncio.run(init_cache())
+    await init_cache()
     
     uncached_blocks = []
     for block in blocks_to_translate:
-        cached = asyncio.run(get_cached(block.text, "en", "zh-CN"))
+        cached = await get_cached(block.text, "en", "zh-CN")
         if cached:
             block.translated = cached
         else:
@@ -177,7 +176,7 @@ def prepare_translation_tasks(
     }
 
 
-def apply_translations_and_build(
+async def apply_translations_and_build(
     task_id: str,
     translations: dict[int, list[str]],
 ) -> dict:
@@ -236,8 +235,7 @@ def apply_translations_and_build(
                         if block.text == text and not block.translated:
                             block.translated = batch_translations[i]
                             # 写入缓存
-                            import asyncio
-                            asyncio.run(set_cached(text, batch_translations[i], "en", "zh-CN"))
+                            await set_cached(text, batch_translations[i], "en", "zh-CN")
                             break
     
     # 重建 PDF
@@ -259,6 +257,7 @@ def apply_translations_and_build(
 
 if __name__ == "__main__":
     import sys
+    import asyncio
     
     if len(sys.argv) < 2:
         print("用法:")
@@ -268,5 +267,5 @@ if __name__ == "__main__":
     pdf_path = sys.argv[1]
     batch_size = int(sys.argv[2]) if len(sys.argv) > 2 else 5
     
-    result = prepare_translation_tasks(pdf_path, batch_size=batch_size)
+    result = asyncio.run(prepare_translation_tasks(pdf_path, batch_size=batch_size))
     print(json.dumps(result, indent=2))
