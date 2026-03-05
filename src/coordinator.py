@@ -255,17 +255,20 @@ async def apply_translations_and_build(
     }
 
 
-if __name__ == "__main__":
+async def main():
     import sys
-    import asyncio
-    
     if len(sys.argv) < 2:
         print("用法:")
         print("  python coordinator.py <pdf_path> [batch_size]")
         sys.exit(1)
-    
+
     pdf_path = sys.argv[1]
     batch_size = int(sys.argv[2]) if len(sys.argv) > 2 else 5
-    
-    result = asyncio.run(prepare_translation_tasks(pdf_path, batch_size=batch_size))
+
+    result = await prepare_translation_tasks(pdf_path, batch_size=batch_size)
     print(json.dumps(result, indent=2))
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
